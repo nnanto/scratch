@@ -8,7 +8,7 @@ const params = {
   energyRadius: 350,               // Radius of influence for energy transfer
   energyBoost: 0.3,                // Energy boost factor (0-1)
   maxEnergyLevel: 3.0,             // Maximum energy level a ball can have
-  energyDecay: 0.98,               // Energy decay rate per frame
+  energyDecay: 0.9,               // Energy decay rate per frame
   refractoryPeriod: 200,           // Time after pulse when ball can't receive energy (ms)
   backgroundColor: [20, 20, 30],   // Background color [R, G, B]
   ballColor: [100, 150, 255],      // Base ball color [R, G, B]
@@ -71,13 +71,14 @@ class Ball {
       const pulseValue = sin(this.pulseProgress * PI);
       this.currentRadius = this.baseRadius + (params.pulseAmplitude * pulseValue);
       this.alpha = 255 * (0.7 + 0.3 * pulseValue);
+      this.energyLevel = 1.0; // Reset energy level on pulse
     } else {
       this.currentRadius = this.baseRadius;
       this.alpha = 255 * 0.7;
     }
     
     // Decay energy over time
-    this.energyLevel = max(1.0, this.energyLevel * params.energyDecay);
+    // this.energyLevel = max(1.0, this.energyLevel * params.energyDecay);
   }
   
   startPulse() {
