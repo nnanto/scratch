@@ -1,0 +1,23 @@
+{
+  "name": "p5js-local-environment",
+  "version": "1.0.0",
+  "description": "A simple p5.js local development environment",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "serve": "live-server --port=8080 --open=/index.html",
+    "dev": "live-server"
+  },
+  "keywords": [
+    "p5js",
+    "creative-coding",
+    "javascript",
+    "art",
+    "generative"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
