@@ -1,7 +1,7 @@
 
 // Customizable Parameters
 const params = {
-  numBalls: 25,                    // Number of balls
+  numBalls: 15,                    // Number of balls
   baseRadius: 30,                  // Base radius of balls
   pulseAmplitude: 15,              // How much the radius changes during pulse
   basePulseInterval: 1000,         // Base pulse interval in milliseconds
@@ -22,9 +22,7 @@ const params = {
 
 let balls = [];
 let lastPulseTime = 0;
-let recentPulses = []; // Track recent pulses for synchronization analysis
-let synchronizedGroups = [];
-let groupIdCounter = 0;
+let pulseCounter = 0; // Count total pulses
 
 class Ball {
   constructor(x, y) {
@@ -38,7 +36,6 @@ class Ball {
     this.pulseProgress = 0;
     this.alpha = 255;
     this.isInRefractoryPeriod = false;
-    this.syncGroupId = null; // Track which sync group this ball belongs to
     this.id = Math.random().toString(36).substr(2, 9); // Unique ID for each ball
   }
   
@@ -87,14 +84,8 @@ class Ball {
     this.lastPulseTime = millis();
     this.isInRefractoryPeriod = true; // Enter refractory period
     
-    // Record this pulse for synchronization analysis
-    recentPulses.push({
-      ballId: this.id,
-      ball: this,
-      timestamp: millis(),
-      x: this.x,
-      y: this.y
-    });
+    // Increment global pulse counter
+    pulseCounter++;
     
     // Transfer energy to nearby balls
     this.transferEnergyToNearby();
@@ -151,14 +142,6 @@ class Ball {
       b = params.ballColor[2] * energyIntensity;
     }
     
-    // Modify color if ball is part of a synchronized group
-    if (this.syncGroupId !== null) {
-      // Add a slight tint to show synchronized balls
-      r = min(255, r + 30);
-      g = min(255, g + 20);
-      b = min(255, b + 10);
-    }
-    
     // Draw the ball
     fill(r, g, b, this.alpha);
     noStroke();
@@ -213,9 +196,6 @@ function draw() {
     ball.draw();
   }
   
-  // Analyze synchronization
-  analyzeSynchronization();
-  
   // Draw UI
   drawUI();
 }
@@ -223,40 +203,44 @@ function draw() {
 function drawUI() {
   // Draw parameter panel
   fill(0, 0, 0, 150);
-  rect(10, 10, 280, 380);
+  rect(10, 10, 280, 450);
   
   fill(255);
   textAlign(LEFT);
   textSize(12);
   text("Pulsing Balls Simulation", 20, 30);
   text(`Balls: ${balls.length}`, 20, 50);
-  text(`Pulse Interval: ${params.basePulseInterval}ms`, 20, 70);
-  text(`Energy Radius: ${params.energyRadius}px`, 20, 90);
-  text(`Energy Boost: ${params.energyBoost}`, 20, 110);
-  text(`Max Energy: ${params.maxEnergyLevel}`, 20, 130);
-  text(`Refractory Period: ${params.refractoryPeriod}ms`, 20, 150);
-  text(`Synchronized Groups: ${synchronizedGroups.length}`, 20, 170);
+  text(`Total Pulses: ${pulseCounter}`, 20, 70);
+  text(`Pulse Interval: ${params.basePulseInterval}ms`, 20, 90);
+  text(`Energy Radius: ${params.energyRadius}px`, 20, 110);
+  text(`Energy Boost: ${params.energyBoost}`, 20, 130);
+  text(`Max Energy: ${params.maxEnergyLevel}`, 20, 150);
+  text(`Refractory Period: ${params.refractoryPeriod}ms`, 20, 170);
   
   // Controls section
+  let yPos = 190;
   textSize(14);
   fill(255, 255, 100);
-  text("Controls:", 20, 200);
+  text("Controls:", 20, yPos);
+  yPos += 20;
   
   textSize(11);
   fill(255);
-  text("Mouse:", 20, 220);
-  text("  Click: Add ball (right side only)", 20, 235);
+  text("Mouse:", 20, yPos);
+  text("  Click: Add ball (right side only)", 20, yPos + 15);
+  yPos += 35;
   
-  text("Keys:", 20, 255);
-  text("  'c': Clear all balls", 20, 270);
-  text("  'd': Toggle debug mode (influence radius)", 20, 285);
-  text("  'e': Toggle energy text display", 20, 300);
+  text("Keys:", 20, yPos);
+  text("  'c': Clear all balls", 20, yPos + 15);
+  text("  'd': Toggle debug mode (influence radius)", 20, yPos + 30);
+  text("  'e': Toggle energy text display", 20, yPos + 45);
+  yPos += 65;
   
-  text("Parameter Controls:", 20, 320);
-  text("  '1'/'2': Decrease/Increase pulse interval", 20, 335);
-  text("  '3'/'4': Decrease/Increase energy radius", 20, 350);
-  text("  '5'/'6': Decrease/Increase energy boost", 20, 365);
-  text("  '7'/'8': Decrease/Increase refractory period", 20, 380);
+  text("Parameter Controls:", 20, yPos);
+  text("  '1'/'2': Decrease/Increase pulse interval", 20, yPos + 15);
+  text("  '3'/'4': Decrease/Increase energy radius", 20, yPos + 30);
+  text("  '5'/'6': Decrease/Increase energy boost", 20, yPos + 45);
+  text("  '7'/'8': Decrease/Increase refractory period", 20, yPos + 60);
 }
 
 function mousePressed() {
@@ -271,9 +255,7 @@ function mousePressed() {
 function keyPressed() {
   if (key === 'c' || key === 'C') {
     balls = [];
-    synchronizedGroups = [];
-    recentPulses = [];
-    groupIdCounter = 0;
+    pulseCounter = 0;
   }
   
   if (key === 'd' || key === 'D') {
@@ -297,91 +279,4 @@ function keyPressed() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-}
-
-function analyzeSynchronization() {
-  const currentTime = millis();
-  const syncTimeWindow = 10; // 100ms synchronization window
-  const groupRetentionTime = 3000; // Keep groups for 3 seconds without activity
-  
-  // Remove old pulses (older than 1 second)
-  recentPulses = recentPulses.filter(pulse => currentTime - pulse.timestamp < 1000);
-  
-  // Remove old synchronized groups that haven't had activity
-  synchronizedGroups = synchronizedGroups.filter(group => {
-    return currentTime - group.lastActivity < groupRetentionTime;
-  });
-  
-  // Clear sync group IDs for balls whose groups were removed
-  for (let ball of balls) {
-    if (ball.syncGroupId !== null) {
-      const groupExists = synchronizedGroups.some(group => group.id === ball.syncGroupId);
-      if (!groupExists) {
-        ball.syncGroupId = null;
-      }
-    }
-  }
-  
-  // Process recent pulses to find new synchronizations
-  if (recentPulses.length >= 2) {
-    let processedPulses = new Set();
-    
-    for (let i = 0; i < recentPulses.length; i++) {
-      if (processedPulses.has(i)) continue;
-      
-      let syncPulses = [recentPulses[i]];
-      processedPulses.add(i);
-      
-      // Find all pulses within sync window of this pulse
-      for (let j = i + 1; j < recentPulses.length; j++) {
-        if (processedPulses.has(j)) continue;
-        
-        const timeDiff = abs(recentPulses[i].timestamp - recentPulses[j].timestamp);
-        if (timeDiff <= syncTimeWindow) {
-          syncPulses.push(recentPulses[j]);
-          processedPulses.add(j);
-        }
-      }
-      
-      // Only consider groups with 2 or more balls
-      if (syncPulses.length >= 2) {
-        // Check if these balls are already in an existing group
-        let existingGroup = null;
-        for (let pulse of syncPulses) {
-          if (pulse.ball.syncGroupId !== null) {
-            existingGroup = synchronizedGroups.find(group => group.id === pulse.ball.syncGroupId);
-            break;
-          }
-        }
-        
-        if (existingGroup) {
-          // Update existing group
-          existingGroup.lastActivity = currentTime;
-          // Add any new balls to the existing group
-          for (let pulse of syncPulses) {
-            if (pulse.ball.syncGroupId === null) {
-              pulse.ball.syncGroupId = existingGroup.id;
-              existingGroup.ballIds.add(pulse.ballId);
-            }
-          }
-        } else {
-          // Create new synchronized group
-          const newGroupId = ++groupIdCounter;
-          const newGroup = {
-            id: newGroupId,
-            ballIds: new Set(syncPulses.map(p => p.ballId)),
-            lastActivity: currentTime,
-            createdAt: currentTime
-          };
-          
-          synchronizedGroups.push(newGroup);
-          
-          // Assign group ID to all balls in this sync
-          for (let pulse of syncPulses) {
-            pulse.ball.syncGroupId = newGroupId;
-          }
-        }
-      }
-    }
-  }
 }
