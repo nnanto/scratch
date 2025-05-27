@@ -2,7 +2,7 @@
 // Customizable Parameters
 const params = {
   numBalls: 15,                    // Number of balls
-  baseRadius: 30,                  // Base radius of balls
+  baseRadius: 20,                  // Base radius of balls
   pulseAmplitude: 15,              // How much the radius changes during pulse
   basePulseInterval: 1000,         // Base pulse interval in milliseconds
   energyRadius: 350,               // Radius of influence for energy transfer
@@ -116,10 +116,13 @@ class Ball {
     
     // Draw influence radius in debug mode
     if (params.showInfluenceRadius && this.isPulsing) {
-      stroke(255, 100, 100, 50);
-      strokeWeight(1);
       noFill();
+      stroke(150, 200, 255, 25);
+      strokeWeight(2);
       ellipse(this.x, this.y, params.energyRadius * 2);
+      stroke(150, 200, 255, 15);
+      strokeWeight(1);
+      ellipse(this.x, this.y, params.energyRadius * 2.2);
     }
     
     // Calculate color based on energy level and pulse state
@@ -142,15 +145,20 @@ class Ball {
       b = params.ballColor[2] * energyIntensity;
     }
     
-    // Draw the ball
-    fill(r, g, b, this.alpha);
+    // Draw the ball with subtle glow
+    // Soft outer glow
+    fill(r, g, b, this.alpha * 0.2);
     noStroke();
+    ellipse(this.x, this.y, (this.currentRadius + 6) * 2);
+    
+    // Main ball
+    fill(r, g, b, this.alpha);
     ellipse(this.x, this.y, this.currentRadius * 2);
     
-    // Draw energy level indicator (small ring)
+    // Draw energy level indicator
     const energyRingRadius = this.baseRadius + 5;
     const energyAngle = map(this.energyLevel, 1.0, params.maxEnergyLevel, 0, TWO_PI);
-    stroke(255, 255, 100, 150);
+    stroke(180, 255, 120, 120);
     strokeWeight(2);
     noFill();
     arc(this.x, this.y, energyRingRadius * 2, energyRingRadius * 2, 0, energyAngle);
@@ -203,7 +211,7 @@ function draw() {
 function drawUI() {
   // Draw parameter panel
   fill(0, 0, 0, 150);
-  rect(10, 10, 280, 450);
+  rect(10, 10, 280, 520);
   
   fill(255);
   textAlign(LEFT);
@@ -217,30 +225,50 @@ function drawUI() {
   text(`Max Energy: ${params.maxEnergyLevel}`, 20, 150);
   text(`Refractory Period: ${params.refractoryPeriod}ms`, 20, 170);
   
+  // Description section
+  let currentY = 190;
+  textSize(14);
+  fill(100, 200, 255);
+  text("About:", 20, currentY);
+  currentY += 20;
+  
+  textSize(11);
+  fill(200, 200, 200);
+  text("Each ball pulses at random intervals,", 20, currentY);
+  text("but nearby balls transfer energy to", 20, currentY + 15);
+  text("each other, gradually speeding up", 20, currentY + 30);
+  text("their pulse rates.", 20, currentY + 45);
+  currentY += 65;
+  
+  text("Over time, this energy coupling", 20, currentY);
+  text("creates emergent synchronization -", 20, currentY + 15);
+  text("the balls will naturally align their", 20, currentY + 30);
+  text("pulses without central control.", 20, currentY + 45);
+  currentY += 65;
+  
   // Controls section
-  let yPos = 190;
   textSize(14);
   fill(255, 255, 100);
-  text("Controls:", 20, yPos);
-  yPos += 20;
+  text("Controls:", 20, currentY);
+  currentY += 20;
   
   textSize(11);
   fill(255);
-  text("Mouse:", 20, yPos);
-  text("  Click: Add ball (right side only)", 20, yPos + 15);
-  yPos += 35;
+  text("Mouse:", 20, currentY);
+  text("  Click: Add ball (right side only)", 20, currentY + 15);
+  currentY += 35;
   
-  text("Keys:", 20, yPos);
-  text("  'c': Clear all balls", 20, yPos + 15);
-  text("  'd': Toggle debug mode (influence radius)", 20, yPos + 30);
-  text("  'e': Toggle energy text display", 20, yPos + 45);
-  yPos += 65;
+  text("Keys:", 20, currentY);
+  text("  'c': Clear all balls", 20, currentY + 15);
+  text("  'd': Toggle debug mode (influence radius)", 20, currentY + 30);
+  text("  'e': Toggle energy text display", 20, currentY + 45);
+  currentY += 65;
   
-  text("Parameter Controls:", 20, yPos);
-  text("  '1'/'2': Decrease/Increase pulse interval", 20, yPos + 15);
-  text("  '3'/'4': Decrease/Increase energy radius", 20, yPos + 30);
-  text("  '5'/'6': Decrease/Increase energy boost", 20, yPos + 45);
-  text("  '7'/'8': Decrease/Increase refractory period", 20, yPos + 60);
+  text("Parameter Controls:", 20, currentY);
+  text("  '1'/'2': Decrease/Increase pulse interval", 20, currentY + 15);
+  text("  '3'/'4': Decrease/Increase energy radius", 20, currentY + 30);
+  text("  '5'/'6': Decrease/Increase energy boost", 20, currentY + 45);
+  text("  '7'/'8': Decrease/Increase refractory period", 20, currentY + 60);
 }
 
 function mousePressed() {
