@@ -1,7 +1,7 @@
 
 // Customizable Parameters
 const params = {
-  numBalls: 15,                    // Number of balls
+  numBalls: 20,                    // Number of balls
   baseRadius: 20,                  // Base radius of balls
   pulseAmplitude: 15,              // How much the radius changes during pulse
   basePulseInterval: 1000,         // Base pulse interval in milliseconds
