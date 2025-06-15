@@ -194,15 +194,24 @@ class Ball {
     // Calculate color based on energy level and pulse state
     let r, g, b;
     if (this.isPulsing) {
-      const pulseValue = sin(this.pulseProgress * PI);
-      r = lerp(params.ballColor[0], params.pulseColor[0], pulseValue);
-      g = lerp(params.ballColor[1], params.pulseColor[1], pulseValue);
-      b = lerp(params.ballColor[2], params.pulseColor[2], pulseValue);
+      if (params.energyIncrease) {
+        // Green pulse for energy increase mode
+        const pulseValue = sin(this.pulseProgress * PI);
+        r = lerp(params.ballColor[0], 50, pulseValue);  // Less red
+        g = lerp(params.ballColor[1], 200, pulseValue);  // More green
+        b = lerp(params.ballColor[2], 100, pulseValue);  // Less blue
+      } else {
+        // Red pulse for energy decrease mode
+        const pulseValue = sin(this.pulseProgress * PI);
+        r = lerp(params.ballColor[0], 200, pulseValue);  // More red
+        g = lerp(params.ballColor[1], 50, pulseValue);  // Less green
+        b = lerp(params.ballColor[2], 50, pulseValue);  // Less blue
+      }
     } else if (this.isInRefractoryPeriod) {
-      // Use refractory color during refractory period
-      r = params.refractoryColor[0];
-      g = params.refractoryColor[1];
-      b = params.refractoryColor[2];
+      // Light grey during refractory period
+      r = 140;
+      g = 140;
+      b = 140;
     } else {
       // Color intensity based on energy level
       const energyIntensity = map(this.energyLevel, 1.0, params.maxEnergyLevel, 0.5, 1.0);
@@ -213,12 +222,25 @@ class Ball {
     
     // Draw the ball with subtle glow - color based on energy mode
     // Soft outer glow
-    if (params.energyIncrease) {
-      // Green tint for increase mode
-      fill(r * 0.8 + 50, g * 0.8 + 100, b * 0.8, this.alpha * 0.2);
+    if (this.isPulsing) {
+      if (params.energyIncrease) {
+        // Green glow for increase mode
+        fill(r * 0.8 + 20, g * 0.8 + 40, b * 0.8 + 20, this.alpha * 0.2);
+      } else {
+        // Red glow for decrease mode
+        fill(r * 0.8 + 40, g * 0.8 + 20, b * 0.8 + 20, this.alpha * 0.2);
+      }
+    } else if (this.isInRefractoryPeriod) {
+      // Light grey glow for refractory period
+      fill(r * 0.9, g * 0.9, b * 0.9, this.alpha * 0.15);
     } else {
-      // Red tint for decrease mode
-      fill(r * 0.8 + 100, g * 0.8 + 50, b * 0.8, this.alpha * 0.2);
+      if (params.energyIncrease) {
+        // Green tint for increase mode
+        fill(r * 0.8 + 50, g * 0.8 + 100, b * 0.8, this.alpha * 0.2);
+      } else {
+        // Red tint for decrease mode
+        fill(r * 0.8 + 100, g * 0.8 + 50, b * 0.8, this.alpha * 0.2);
+      }
     }
     noStroke();
     ellipse(this.x, this.y, (this.currentRadius + 6) * 2);
@@ -305,69 +327,154 @@ function draw() {
 }
 
 function drawUI() {
-  // Draw parameter panel
-  fill(0, 0, 0, 150);
-  rect(10, 10, 280, 520);
+  // Main panel background
+  fill(15, 15, 25, 200);
+  stroke(60, 60, 80, 150);
+  strokeWeight(2);
+  rect(10, 10, 290, height - 20, 8);
   
-  fill(255);
+  // Header section
+  fill(40, 40, 60, 180);
+  noStroke();
+  rect(20, 20, 270, 50, 6);
+  
+  fill(120, 180, 255);
   textAlign(LEFT);
-  textSize(12);
-  text("Pulsing Balls Simulation", 20, 30);
-  text(`Balls: ${balls.length}`, 20, 50);
-  text(`Total Pulses: ${pulseCounter}`, 20, 70);
-  text(`Pulse Interval: ${params.basePulseInterval}ms`, 20, 90);
-  text(`Energy Radius: ${params.energyRadius}px`, 20, 110);
-  text(`Energy Boost: ${params.energyBoost}`, 20, 130);
-  text(`Max Energy: ${params.maxEnergyLevel}`, 20, 150);
-  text(`Refractory Period: ${params.refractoryPeriod}ms`, 20, 170);
-  text(`Energy Mode: ${params.energyIncrease ? 'Increase' : 'Decrease'}`, 20, 190);
+  textSize(16);
+  textStyle(BOLD);
+  text("Synchronization Simulation", 30, 42);
   
-  // Description section
-  let currentY = 210;
-  textSize(14);
-  fill(100, 200, 255);
-  text("About:", 20, currentY);
-  currentY += 20;
-  
+  fill(180, 180, 200);
   textSize(11);
-  fill(200, 200, 200);
-  text("Each ball pulses at random intervals,", 20, currentY);
-  text(`and ${params.energyIncrease ? 'transfers energy to' : 'drains energy from'}`, 20, currentY + 15);
-  text("nearby balls, gradually", 20, currentY + 30);
-  text(`${params.energyIncrease ? 'speeding up' : 'slowing down'} their pulse rates.`, 20, currentY + 45);
-  currentY += 65;
+  textStyle(NORMAL);
+  text(`${balls.length} balls • ${pulseCounter} total pulses`, 30, 58);
   
-  text("Over time, this energy coupling", 20, currentY);
-  text("creates emergent synchronization -", 20, currentY + 15);
-  text("the balls will naturally align their", 20, currentY + 30);
-  text("pulses without central control.", 20, currentY + 45);
-  currentY += 65;
+  // Status section
+  let currentY = 90;
+  fill(50, 50, 70, 150);
+  rect(20, currentY, 270, 100, 6);
+  
+  fill(100, 255, 150);
+  textSize(14);
+  textStyle(BOLD);
+  text("Current Parameters", 30, currentY + 20);
+  
+  fill(220, 220, 240);
+  textSize(11);
+  textStyle(NORMAL);
+  text(`Pulse Interval: ${params.basePulseInterval}ms`, 30, currentY + 38);
+  text(`Energy Radius: ${params.energyRadius}px`, 30, currentY + 52);
+  text(`Energy Boost: ${params.energyBoost.toFixed(1)}`, 30, currentY + 66);
+  text(`Refractory Period: ${params.refractoryPeriod}ms`, 30, currentY + 80);
+  
+  // Energy mode indicator
+  currentY += 105;
+  fill(params.energyIncrease ? [50, 100, 50, 150] : [100, 50, 50, 150]);
+  rect(20, currentY, 270, 35, 6);
+  
+  fill(params.energyIncrease ? [120, 255, 120] : [255, 120, 120]);
+  textSize(12);
+  textStyle(BOLD);
+  text(`Energy Mode: ${params.energyIncrease ? 'INCREASE' : 'DECREASE'}`, 30, currentY + 22);
+  
+  // About section
+  currentY += 55;
+  fill(40, 40, 60, 150);
+  rect(20, currentY, 270, 120, 6);
+  
+  fill(255, 255, 120);
+  textSize(14);
+  textStyle(BOLD);
+  text("How It Works", 30, currentY + 20);
+  
+  fill(200, 200, 220);
+  textSize(10);
+  textStyle(NORMAL);
+  text("Each ball pulses at intervals based on its energy.", 30, currentY + 38);
+  text(`Pulsing balls ${params.energyIncrease ? 'boost' : 'drain'} energy from nearby`, 30, currentY + 52);
+  text(`balls, ${params.energyIncrease ? 'speeding up' : 'slowing down'} their pulse rates.`, 30, currentY + 66);
+  text("", 30, currentY + 80);
+  text("Over time, this creates emergent synchronization", 30, currentY + 80);
+  text("without any central coordination.", 30, currentY + 94);
   
   // Controls section
+  currentY += 140;
+  fill(30, 50, 70, 150);
+  rect(20, currentY, 270, 140, 6);
+  
+  fill(255, 180, 100);
   textSize(14);
-  fill(255, 255, 100);
-  text("Controls:", 20, currentY);
-  currentY += 20;
+  textStyle(BOLD);
+  text("Mouse Controls", 30, currentY + 20);
   
-  textSize(11);
-  fill(255);
-  text("Mouse:", 20, currentY);
-  text("  Click & Drag: Move balls around", 20, currentY + 15);
-  text("  Click empty space: Add ball", 20, currentY + 30);
-  currentY += 50;
+  fill(220, 220, 240);
+  textSize(10);
+  textStyle(NORMAL);
+  text("• Click & Drag: Move balls around", 35, currentY + 38);
+  text("• Click empty space: Add new ball", 35, currentY + 52);
   
-  text("Keys:", 20, currentY);
-  text("  'c': Clear all balls", 20, currentY + 15);
-  text("  'd': Toggle debug mode (influence radius)", 20, currentY + 30);
-  text("  'e': Toggle energy text display", 20, currentY + 45);
-  text("  't': Toggle energy mode (increase/decrease)", 20, currentY + 60);
-  currentY += 80;
+  fill(255, 180, 100);
+  textSize(14);
+  textStyle(BOLD);
+  text("Keyboard Shortcuts", 30, currentY + 75);
   
-  text("Parameter Controls:", 20, currentY);
-  text("  '1'/'2': Decrease/Increase pulse interval", 20, currentY + 15);
-  text("  '3'/'4': Decrease/Increase energy radius", 20, currentY + 30);
-  text("  '5'/'6': Decrease/Increase energy boost", 20, currentY + 45);
-  text("  '7'/'8': Decrease/Increase refractory period", 20, currentY + 60);
+  fill(220, 220, 240);
+  textSize(10);
+  textStyle(NORMAL);
+  text("• C: Clear all balls", 35, currentY + 93);
+  text("• D: Toggle debug mode (show influence)", 35, currentY + 107);
+  text("• E: Toggle energy text display", 35, currentY + 121);
+  
+  // Parameter controls section
+  currentY += 160;
+  fill(60, 40, 70, 150);
+  rect(20, currentY, 270, 120, 6);
+  
+  fill(255, 150, 255);
+  textSize(14);
+  textStyle(BOLD);
+  text("Parameter Controls", 30, currentY + 20);
+  
+  fill(220, 220, 240);
+  textSize(10);
+  textStyle(NORMAL);
+  text("• T: Toggle energy mode (increase ↔ decrease)", 35, currentY + 38);
+  text("• 1/2: Pulse interval (faster ↔ slower)", 35, currentY + 52);
+  text("• 3/4: Energy radius (smaller ↔ larger)", 35, currentY + 66);
+  text("• 5/6: Energy boost (weaker ↔ stronger)", 35, currentY + 80);
+  text("• 7/8: Refractory period (shorter ↔ longer)", 35, currentY + 94);
+  
+  // Debug indicators (if enabled)
+  if (params.showInfluenceRadius || params.showEnergyText) {
+    currentY += 140;
+    fill(70, 70, 30, 150);
+    rect(20, currentY, 270, 45, 6);
+    
+    fill(255, 255, 100);
+    textSize(12);
+    textStyle(BOLD);
+    text("Debug Mode Active", 30, currentY + 22);
+    
+    fill(220, 220, 180);
+    textSize(10);
+    textStyle(NORMAL);
+    let debugText = "";
+    if (params.showInfluenceRadius) debugText += "Influence Radius ";
+    if (params.showEnergyText) debugText += "Energy Text";
+    text(debugText, 30, currentY + 36);
+  }
+  
+  // Play area separator line
+  stroke(100, 150, 200, 100);
+  strokeWeight(3);
+  line(310, 0, 310, height);
+  
+  // Play area label
+  fill(200, 250, 200, 80);
+  textAlign(CENTER);
+  textSize(12);
+  textStyle(NORMAL);
+  text("← Controls | Simulation Area →", width/2 + 155, 25);
 }
 
 function mousePressed() {
@@ -426,7 +533,7 @@ function keyPressed() {
   if (key === '1') params.basePulseInterval = max(500, params.basePulseInterval - 200);
   if (key === '2') params.basePulseInterval = min(5000, params.basePulseInterval + 200);
   if (key === '3') params.energyRadius = max(50, params.energyRadius - 25);
-  if (key === '4') params.energyRadius = min(100, params.energyRadius + 25);
+  if (key === '4') params.energyRadius = min(300, params.energyRadius + 25);
   if (key === '5') params.energyBoost = max(0.1, params.energyBoost - 0.1);
   if (key === '6') params.energyBoost = min(1.0, params.energyBoost + 0.1);
   if (key === '7') params.refractoryPeriod = max(100, params.refractoryPeriod - 100);
